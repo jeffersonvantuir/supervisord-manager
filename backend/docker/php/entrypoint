@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Setup Symfony directories
+mkdir -p var/cache/dev var/log/dev
+
+# Setup permissions
+chmod -R 777 var/
+
+exec php-fpm

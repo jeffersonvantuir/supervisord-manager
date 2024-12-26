@@ -1,0 +1,29 @@
+services:
+    php:
+        container_name: supervisord_manager_php
+        build:
+            context: .
+        working_dir: /app
+        expose:
+            - '9000'
+        networks:
+            - supervisord_manager_network
+        volumes:
+            - ./backend:/app:rw
+            - ./backend/docker/php/php.ini:/usr/local/etc/php/php.ini:rw
+            - ./backend/docker/php/php-cli.ini:/usr/local/etc/php/php-cli.ini:rw
+            - /backend/docker/php/entrypoint:/usr/local/bin/docker-php-entrypoint'
+
+    nginx:
+        container_name: supervisord_manager_nginx
+        image: nginx:latest
+        depends_on:
+            - php
+        networks:
+            - supervisord_manager_network
+        volumes:
+            - ./backend/public:/app/public
+            - ./backend/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+
+networks:
+    supervisord_manager_network:
