@@ -24,7 +24,7 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 # Setup extensões
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 RUN chmod +x /usr/local/bin/install-php-extensions && \
-    install-php-extensions sockets mongodb intl
+    install-php-extensions sockets mongodb intl pdo_mysql
 
 # Install Node.js and npm
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
