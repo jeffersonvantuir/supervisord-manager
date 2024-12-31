@@ -12,7 +12,7 @@ services:
             - ./backend:/app:rw
             - ./backend/docker/php/php.ini:/usr/local/etc/php/php.ini:rw
             - ./backend/docker/php/php-cli.ini:/usr/local/etc/php/php-cli.ini:rw
-            - /backend/docker/php/entrypoint:/usr/local/bin/docker-php-entrypoint'
+            - ./backend/docker/php/entrypoint:/usr/local/bin/docker-php-entrypoint'
 
     nginx:
         container_name: supervisord_manager_nginx

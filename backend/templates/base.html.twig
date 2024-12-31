@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title|default('Symfony + Vue + Bootstrap') }}</title>
+    <link rel="stylesheet" href="{{ asset('build/app.css') }}">
+</head>
+<body>
+<div id="app">
+    <supervisor-table></supervisor-table>
+</div>
+<script src="{{ asset('build/runtime.js') }}"></script>
+<script src="{{ asset('build/main.js') }}"></script>
+</body>
+</html>

@@ -26,3 +26,6 @@ ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/do
 RUN chmod +x /usr/local/bin/install-php-extensions && \
     install-php-extensions sockets mongodb intl
 
+# Install Node.js and npm
+RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
+    && apt-get update && apt-get install -y nodejs
