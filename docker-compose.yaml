@@ -25,5 +25,16 @@ services:
             - ./backend/public:/app/public
             - ./backend/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
 
+    mysql:
+        container_name: supervisord_manager_mysql
+        image: mysql:8
+        networks:
+            - supervisord_manager_network
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD:-nopassword}
+            MYSQL_DATABASE: ${MYSQL_DATABASE_NAME:-default}
+        volumes:
+            - ./backend/docker/mysql/data:/var/lib/mysql:rw
+
 networks:
     supervisord_manager_network:

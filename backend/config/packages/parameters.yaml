@@ -1,0 +1,2 @@
+parameters:
+    app.encryption_master_key: '%env(string:ENCRYPTION_MASTER_KEY)%'

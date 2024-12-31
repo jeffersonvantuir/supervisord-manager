@@ -18,7 +18,7 @@ const Sidebar: React.FC = () => {
             label: 'Dashboards',
         },
         {
-            key: '/servidores',
+            key: '/servers',
             icon: <CloudServerOutlined />,
             label: 'Servidores',
         },

@@ -2,7 +2,10 @@
 
 namespace App\Controller;
 
+use App\Entity\Server;
 use App\Enum\SupervisorActionEnum;
+use App\Service\EncryptionService;
+use Doctrine\ORM\EntityManagerInterface;
 use Supervisor\Supervisor;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,34 +17,39 @@ use GuzzleHttp\Psr7\HttpFactory;
 
 class SupervisorController extends AbstractController
 {
+    public function __construct(
+        private readonly EntityManagerInterface $entityManager,
+        private readonly EncryptionService $encryptionService,
+    ) {
+
+    }
+
     #[Route('/supervisor', name: 'app_supervisor')]
     public function index(): Response
     {
-        $servers = [
-            [
-                'id' => rand(1, 10),
-                'name' => 'API ServiceDesk',
-                'host' => 'http://172.27.33.188:9001/RPC2',
-                'username' => 'admin',
-                'password' => 'admin'
-            ]
-        ];
+        $servers = $this->entityManager->getRepository(Server::class)->findBy(
+            ['enabled' => true]
+        );
 
         $responseJson = [];
 
         foreach ($servers as $server) {
+            if (false === $server->isSupervisorCompletedData()) {
+                continue;
+            }
+
             $guzzleClient = new \GuzzleHttp\Client(
                 [
                     'auth' => [
-                        $server['username'],
-                        $server['password'],
+                        $server->getSupervisorUsername(),
+                        $this->encryptionService->decrypt($server->getSupervisorPassword()),
                     ]
                 ]
             );
 
             // Pass the url and the guzzle client to the fXmlRpc Client
             $client = new Client(
-                $server['host'],
+                $server->getSupervisorEndpoint(),
                 new PsrTransport(
                     new HttpFactory(),
                     $guzzleClient
@@ -60,6 +68,7 @@ class SupervisorController extends AbstractController
                 $processName = sprintf('%s:%s', $payload['group'], $process->getName());
 
                 $processesArray[] = [
+                    'serverId' => $server->getId(),
                     'processId' => $processName,
                     'group' => $payload['group'],
                     'logfile' => $payload['logfile'],
@@ -83,7 +92,7 @@ class SupervisorController extends AbstractController
             }
 
             $responseJson[] = [
-                'server' => $server['name'],
+                'server' => $server->getName(),
                 'processes' => $processesArray
             ];
         }
@@ -95,46 +104,48 @@ class SupervisorController extends AbstractController
     public function handler(
         Request $request
     ): Response {
-        $guzzleClient = new \GuzzleHttp\Client(
-            [
-                'auth' => [
-                    'admin',
-                    'admin',
-                ]
-            ]
-        );
-
-        // Pass the url and the guzzle client to the fXmlRpc Client
-        $client = new Client(
-            'http://172.27.33.188:9001/RPC2',
-            new PsrTransport(
-                new HttpFactory(),
-                $guzzleClient
-            )
-        );
-
-        // Pass the client to the Supervisor library.
-        $supervisor = new Supervisor($client);
-        $requestData = $request->toArray();
-        $processName = $requestData['process'];
-
         try {
-            if ($requestData['action'] === 'stop') {
-                $supervisor->stopProcess($processName);
-            } else {
-                $supervisor->startProcess($processName);
+            $requestData = $request->toArray();
+
+            $server = $this->entityManager->getRepository(Server::class)->findOneBy(
+                ['id' => $requestData['server_id'] ?? null]
+            );
+
+            if (null === $server || false === $server->isSupervisorCompletedData()) {
+                throw new \DomainException('Servidor não encontrado');
             }
-        } catch (\Exception $e) {
-            return $this->json(
+
+            $guzzleClient = new \GuzzleHttp\Client(
                 [
-                    'message' => $e->getMessage(),
-                    'action' => $request->request->get('action'),
-                    'process' => $request->request->get('process'),
-                ],
+                    'auth' => [
+                        $server->getSupervisorUsername(),
+                        $this->encryptionService->decrypt($server->getSupervisorPassword()),
+                    ]
+                ]
+            );
+
+            $client = new Client(
+                $server->getSupervisorEndpoint(),
+                new PsrTransport(
+                    new HttpFactory(),
+                    $guzzleClient
+                )
+            );
+
+            $supervisor = new Supervisor($client);
+            $processName = $requestData['process'];
+
+            match ($requestData['action']) {
+                SupervisorActionEnum::START->value => $supervisor->startProcess($processName),
+                SupervisorActionEnum::STOP->value => $supervisor->stopProcess($processName),
+            };
+
+            return $this->json([], Response::HTTP_NO_CONTENT);
+        } catch (\Throwable $throwable) {
+            return $this->json(
+                ['message' => $throwable->getMessage()],
                 Response::HTTP_BAD_REQUEST
             );
         }
-
-        return $this->json([], Response::HTTP_NO_CONTENT);
     }
 }

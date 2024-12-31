@@ -50,7 +50,7 @@ const DashboardsPage: React.FC = () => {
         }
     };
 
-    const handleActionClick = async (url: string, processId: string, actionId: string) => {
+    const handleActionClick = async (url: string, processId: string, actionId: string, serverId: string) => {
         if (actionId === 'log') {
             // Abre a URL em uma nova aba
             window.open(`/dashboard/realtime-logs?process=${processId}`, '_blank');
@@ -61,6 +61,7 @@ const DashboardsPage: React.FC = () => {
 
         try {
             await api.post(url, {
+                server_id: serverId,
                 process: processId,
                 action: actionId
             });
@@ -139,7 +140,7 @@ const DashboardsPage: React.FC = () => {
                                     icon={icon}
                                     key={action.id}
                                     loading={isLoading}
-                                    onClick={() => handleActionClick(action.url, record.processId, action.id)}
+                                    onClick={() => handleActionClick(action.url, record.processId, action.id, record.serverId)}
                                 >
                                     {action.title}
                                 </Button>
