@@ -75,19 +75,19 @@ const ServersPage: React.FC = () => {
         <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h1>
-                    <CloudServerOutlined />
+                    <span style={{ padding: '10px' }}><CloudServerOutlined/></span>
                     Servidores
                 </h1>
                 <Button
                     type="primary"
-                    icon={<PlusOutlined />}
+                    icon={<PlusOutlined/>}
                     onClick={handleAddServer}
                 >
                     Adicionar Servidor
                 </Button>
             </div>
             {loading ? (
-                <Spin size="large" />
+                <Spin size="large"/>
             ) : (
                 <Table
                     dataSource={servers}

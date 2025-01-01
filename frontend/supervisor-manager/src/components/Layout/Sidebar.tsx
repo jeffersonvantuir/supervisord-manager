@@ -3,6 +3,7 @@ import Image from 'next/image';
 import {
     DashboardOutlined,
     CloudServerOutlined,
+    EyeOutlined,
 } from '@ant-design/icons';
 import { useRouter } from 'next/router';
 
@@ -13,14 +14,19 @@ const Sidebar: React.FC = () => {
 
     const menuItems = [
         {
-            key: '/dashboards',
+            key: '/dashboard',
             icon: <DashboardOutlined />,
-            label: 'Dashboards',
+            label: 'Dashboard',
         },
         {
             key: '/servers',
             icon: <CloudServerOutlined />,
             label: 'Servidores',
+        },
+        {
+            key: '/supervisor',
+            icon: <EyeOutlined />,
+            label: 'Supervisor',
         },
     ];
 

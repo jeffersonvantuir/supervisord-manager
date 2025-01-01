@@ -148,4 +148,57 @@ class SupervisorController extends AbstractController
             );
         }
     }
+
+    #[Route('/supervisor/process/realtime-logs', name: 'app_supervisor_process_realtime_logs', methods: Request::METHOD_GET)]
+    public function realtimeLogs(
+        Request $request
+    ): Response {
+        try {
+            $requestData = $request->query->all();
+            $offset = $request->query->getInt('offset', 0);
+
+            $server = $this->entityManager->getRepository(Server::class)->findOneBy(
+                ['id' => $requestData['server_id'] ?? null]
+            );
+
+            if (null === $server || false === $server->isSupervisorCompletedData()) {
+                throw new \DomainException('Servidor não encontrado');
+            }
+
+            $guzzleClient = new \GuzzleHttp\Client(
+                [
+                    'auth' => [
+                        $server->getSupervisorUsername(),
+                        $this->encryptionService->decrypt($server->getSupervisorPassword()),
+                    ]
+                ]
+            );
+
+            $client = new Client(
+                $server->getSupervisorEndpoint(),
+                new PsrTransport(
+                    new HttpFactory(),
+                    $guzzleClient
+                )
+            );
+
+            $supervisor = new Supervisor($client);
+            $processName = $requestData['process'];
+
+            list($log, $offset, $overflow) = $supervisor->tailProcessStdoutLog($processName, $offset, 4096);
+
+            return $this->json(
+                [
+                    'log' => $log,
+                    'offset' => $offset,
+                    'overflow' => $overflow
+                ]
+            );
+        } catch (\Throwable $throwable) {
+            return $this->json(
+                ['message' => $throwable->getMessage()],
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+    }
 }

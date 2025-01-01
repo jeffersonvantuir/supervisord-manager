@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Collapse, Table, Spin, message, Button, Space } from 'antd';
-import { PlayCircleOutlined, StopOutlined, FileTextOutlined } from '@ant-design/icons';
+import {
+    PlayCircleOutlined,
+    StopOutlined,
+    FileTextOutlined,
+    EyeOutlined,
+} from '@ant-design/icons';
 import api from "@/services/api";
 
 const { Panel } = Collapse;
@@ -19,7 +24,7 @@ interface ServerData {
     processes: Process[];
 }
 
-const DashboardsPage: React.FC = () => {
+const SupervisorPage: React.FC = () => {
     const [data, setData] = useState<ServerData[]>([]);
     const [initialLoading, setInitialLoading] = useState<boolean>(true);
     const [loading, setLoading] = useState<boolean>(true);
@@ -53,7 +58,7 @@ const DashboardsPage: React.FC = () => {
     const handleActionClick = async (url: string, processId: string, actionId: string, serverId: string) => {
         if (actionId === 'log') {
             // Abre a URL em uma nova aba
-            window.open(`/dashboard/realtime-logs?process=${processId}`, '_blank');
+            window.open(`/supervisor/realtime-logs?process=${processId}&server_id=${serverId}`, '_blank');
             return;
         }
 
@@ -156,7 +161,10 @@ const DashboardsPage: React.FC = () => {
 
     return (
         <div style={{ padding: '20px' }}>
-            <h1>Dashboard</h1>
+            <h1>
+                <span style={{ padding: '10px'}}><EyeOutlined /></span>
+                Supervisor Monitor
+            </h1>
             {loading ? (
                 <Spin size="large" />
             ) : (
@@ -172,4 +180,4 @@ const DashboardsPage: React.FC = () => {
     );
 };
 
-export default DashboardsPage;
+export default SupervisorPage;
