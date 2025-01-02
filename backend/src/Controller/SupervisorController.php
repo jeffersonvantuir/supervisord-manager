@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use App\Entity\Server;
 use App\Enum\SupervisorActionEnum;
 use App\Service\EncryptionService;
+use Doctrine\Common\Collections\Order;
 use Doctrine\ORM\EntityManagerInterface;
 use Supervisor\Supervisor;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -28,7 +31,8 @@ class SupervisorController extends AbstractController
     public function index(): Response
     {
         $servers = $this->entityManager->getRepository(Server::class)->findBy(
-            ['enabled' => true]
+            ['enabled' => true],
+            ['serverGroup' => Order::Ascending->value]
         );
 
         $responseJson = [];
@@ -94,6 +98,7 @@ class SupervisorController extends AbstractController
             $responseJson[] = [
                 'id' => $server->getId(),
                 'server' => $server->getName(),
+                'group' => $server->getServerGroup()?->getName(),
                 'processes' => $processesArray
             ];
         }
@@ -186,7 +191,7 @@ class SupervisorController extends AbstractController
             $supervisor = new Supervisor($client);
             $processName = $requestData['process'];
 
-            list($log, $offset, $overflow) = $supervisor->tailProcessStdoutLog($processName, $offset, 4096);
+            [$log, $offset, $overflow] = $supervisor->tailProcessStdoutLog($processName, $offset, 4096);
 
             return $this->json(
                 [

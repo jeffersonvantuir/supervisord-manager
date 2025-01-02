@@ -27,6 +27,7 @@ interface Process {
 interface ServerData {
     server: string;
     id: string;
+    group: string;
     processes: Process[];
 }
 
@@ -40,8 +41,6 @@ const SupervisorPage: React.FC = () => {
         fetchData();
 
         const intervalId = setInterval(fetchData, 5000);
-
-        fetchData();
 
         return () => clearInterval(intervalId);
     }, []);
@@ -61,33 +60,11 @@ const SupervisorPage: React.FC = () => {
         }
     };
 
-    const handleActionClick = async (url: string, processId: string, actionId: string, serverId: string) => {
-        if (actionId === 'log') {
-            window.open(`/supervisor/realtime-logs?process=${processId}&server_id=${serverId}`, '_blank');
-            return;
-        }
-
-        setLoadingActions((prev) => ({ ...prev, [`${processId}`]: true }));
-
-        try {
-            await api.post(url, {
-                server_id: serverId,
-                process: processId,
-                action: actionId,
-            });
-            message.success('Ação realizada com sucesso');
-        } catch (error) {
-            message.error('Erro ao executar a ação');
-        } finally {
-            setLoadingActions((prev) => ({ ...prev, [`${processId}`]: false }));
-        }
-    };
-
     const handleStopAll = async (serverId: string) => {
         try {
             await api.post(`/supervisor/stop-all/${serverId}`);
             message.success('Todos os processos foram parados com sucesso!');
-            fetchData(); // Recarrega os dados
+            fetchData();
         } catch (error) {
             message.error('Erro ao parar todos os processos');
             console.error(error);
@@ -98,11 +75,19 @@ const SupervisorPage: React.FC = () => {
         try {
             await api.post(`/supervisor/restart-all/${serverId}`);
             message.success('Todos os processos foram reiniciados com sucesso!');
-            fetchData(); // Recarrega os dados
+            fetchData();
         } catch (error) {
             message.error('Erro ao reiniciar todos os processos');
             console.error(error);
         }
+    };
+
+    const groupServersByGroup = (servers: ServerData[]) => {
+        return servers.reduce((acc: Record<string, ServerData[]>, server) => {
+            acc[server.group] = acc[server.group] || [];
+            acc[server.group].push(server);
+            return acc;
+        }, {});
     };
 
     const renderTable = (processes: Process[]) => {
@@ -137,47 +122,17 @@ const SupervisorPage: React.FC = () => {
                 dataIndex: 'action',
                 render: (_: any, record: Process) => (
                     <div style={{ display: 'flex', gap: '8px' }}>
-                        {record.actions.map((action) => {
-                            let buttonProps = {};
-                            let icon;
-
-                            switch (action.id) {
-                                case 'start':
-                                    buttonProps = {
-                                        type: 'primary',
-                                        style: { backgroundColor: 'green', borderColor: 'green' },
-                                    };
-                                    icon = <PlayCircleOutlined />;
-                                    break;
-                                case 'stop':
-                                    buttonProps = {
-                                        type: 'primary',
-                                        danger: true,
-                                    };
-                                    icon = <StopOutlined />;
-                                    break;
-                                case 'log':
-                                    buttonProps = {
-                                        type: 'default',
-                                    };
-                                    icon = <FileTextOutlined />;
-                                    break;
-                            }
-
-                            const isLoading = loadingActions[`${record.processId}-${action.id}`];
-
-                            return (
-                                <Button
-                                    {...buttonProps}
-                                    icon={icon}
-                                    key={action.id}
-                                    loading={isLoading}
-                                    onClick={() => handleActionClick(action.url, record.processId, action.id, record.serverId)}
-                                >
-                                    {action.title}
-                                </Button>
-                            );
-                        })}
+                        {record.actions.map((action) => (
+                            <Button
+                                type="default"
+                                key={action.id}
+                                onClick={() =>
+                                    handleActionClick(action.url, record.processId, action.id, record.serverId)
+                                }
+                            >
+                                {action.title}
+                            </Button>
+                        ))}
                     </div>
                 ),
             },
@@ -185,6 +140,8 @@ const SupervisorPage: React.FC = () => {
 
         return <Table dataSource={processes} columns={columns} rowKey="name" pagination={false} />;
     };
+
+    const groupedServers = groupServersByGroup(data);
 
     return (
         <div style={{ padding: '20px' }}>
@@ -195,48 +152,46 @@ const SupervisorPage: React.FC = () => {
             {loading ? (
                 <Spin size="large" />
             ) : (
-                <Collapse defaultActiveKey={data.map((server) => server.server)} accordion={false}>
-                    {data.map((server) => (
-                        <Panel
-                            header={server.server}
-                            key={server.server}
-                            extra={(
-                                <Space>
-                                    <Popconfirm
-                                        title="Deseja parar todos os processos deste servidor?"
-                                        onConfirm={(e) => {
-                                            e?.stopPropagation(); // Impede o acionamento do Collapse
-                                            handleStopAll(server.id);
-                                        }}
-                                        onClick={(e) => e.stopPropagation()}
-                                        okText="Sim"
-                                        cancelText="Não"
+                Object.entries(groupedServers).map(([group, servers]) => (
+                    <Collapse key={group} style={{ marginBottom: '20px' }}>
+                        <Panel header={group} key={group}>
+                            <Collapse accordion>
+                                {servers.map((server) => (
+                                    <Panel
+                                        header={server.server}
+                                        key={server.id}
+                                        extra={(
+                                            <Space>
+                                                <Popconfirm
+                                                    title="Deseja parar todos os processos deste servidor?"
+                                                    onConfirm={() => handleStopAll(server.id)}
+                                                    okText="Sim"
+                                                    cancelText="Não"
+                                                >
+                                                    <Button type="primary" danger icon={<PoweroffOutlined />}>
+                                                        Stop All
+                                                    </Button>
+                                                </Popconfirm>
+                                                <Popconfirm
+                                                    title="Deseja reiniciar todos os processos deste servidor?"
+                                                    onConfirm={() => handleRestartAll(server.id)}
+                                                    okText="Sim"
+                                                    cancelText="Não"
+                                                >
+                                                    <Button type="primary" icon={<ReloadOutlined />}>
+                                                        Restart All
+                                                    </Button>
+                                                </Popconfirm>
+                                            </Space>
+                                        )}
                                     >
-                                        <Button type="primary" danger icon={<PoweroffOutlined />} onClick={(e) => e.stopPropagation()}>
-                                            Stop All
-                                        </Button>
-                                    </Popconfirm>
-                                    <Popconfirm
-                                        title="Deseja reiniciar todos os processos deste servidor?"
-                                        onConfirm={(e) => {
-                                            e?.stopPropagation(); // Impede o acionamento do Collapse
-                                            handleRestartAll(server.id);
-                                        }}
-                                        onClick={(e) => e.stopPropagation()}
-                                        okText="Sim"
-                                        cancelText="Não"
-                                    >
-                                        <Button type="primary" icon={<ReloadOutlined />} onClick={(e) => e.stopPropagation()}>
-                                            Restart All
-                                        </Button>
-                                    </Popconfirm>
-                                </Space>
-                            )}
-                        >
-                            {renderTable(server.processes)}
+                                        {renderTable(server.processes)}
+                                    </Panel>
+                                ))}
+                            </Collapse>
                         </Panel>
-                    ))}
-                </Collapse>
+                    </Collapse>
+                ))
             )}
         </div>
     );
