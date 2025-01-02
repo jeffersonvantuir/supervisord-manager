@@ -106,7 +106,7 @@ class Server
         return $this->sshPassword;
     }
 
-    public function setSshPassword(string $sshPassword): static
+    public function setSshPassword(?string $sshPassword): static
     {
         $this->sshPassword = $sshPassword;
 

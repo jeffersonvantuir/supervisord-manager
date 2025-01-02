@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Collapse, Table, Spin, message, Button, Space } from 'antd';
+import { Collapse, Table, Spin, message, Button, Space, Popconfirm } from 'antd';
 import {
     PlayCircleOutlined,
     StopOutlined,
     FileTextOutlined,
     EyeOutlined,
+    PoweroffOutlined,
+    ReloadOutlined,
 } from '@ant-design/icons';
 import api from "@/services/api";
 
@@ -17,10 +19,14 @@ interface Process {
     description: string;
     state: number;
     isRunning: boolean;
+    processId: string;
+    serverId: string;
+    actions: { id: string; title: string; url: string }[];
 }
 
 interface ServerData {
     server: string;
+    id: string;
     processes: Process[];
 }
 
@@ -57,7 +63,6 @@ const SupervisorPage: React.FC = () => {
 
     const handleActionClick = async (url: string, processId: string, actionId: string, serverId: string) => {
         if (actionId === 'log') {
-            // Abre a URL em uma nova aba
             window.open(`/supervisor/realtime-logs?process=${processId}&server_id=${serverId}`, '_blank');
             return;
         }
@@ -68,13 +73,35 @@ const SupervisorPage: React.FC = () => {
             await api.post(url, {
                 server_id: serverId,
                 process: processId,
-                action: actionId
+                action: actionId,
             });
             message.success('Ação realizada com sucesso');
         } catch (error) {
             message.error('Erro ao executar a ação');
         } finally {
-            setLoadingActions((prev) => ({ ...prev, [`${processId}`]: true }));
+            setLoadingActions((prev) => ({ ...prev, [`${processId}`]: false }));
+        }
+    };
+
+    const handleStopAll = async (serverId: string) => {
+        try {
+            await api.post(`/supervisor/stop-all/${serverId}`);
+            message.success('Todos os processos foram parados com sucesso!');
+            fetchData(); // Recarrega os dados
+        } catch (error) {
+            message.error('Erro ao parar todos os processos');
+            console.error(error);
+        }
+    };
+
+    const handleRestartAll = async (serverId: string) => {
+        try {
+            await api.post(`/supervisor/restart-all/${serverId}`);
+            message.success('Todos os processos foram reiniciados com sucesso!');
+            fetchData(); // Recarrega os dados
+        } catch (error) {
+            message.error('Erro ao reiniciar todos os processos');
+            console.error(error);
         }
     };
 
@@ -82,7 +109,7 @@ const SupervisorPage: React.FC = () => {
         const columns = [
             {
                 title: 'Processo',
-                dataIndex: 'processId',
+                dataIndex: 'name',
             },
             {
                 title: 'Descrição',
@@ -162,7 +189,7 @@ const SupervisorPage: React.FC = () => {
     return (
         <div style={{ padding: '20px' }}>
             <h1>
-                <span style={{ padding: '10px'}}><EyeOutlined /></span>
+                <span style={{ padding: '10px' }}><EyeOutlined /></span>
                 Supervisor Monitor
             </h1>
             {loading ? (
@@ -170,7 +197,42 @@ const SupervisorPage: React.FC = () => {
             ) : (
                 <Collapse defaultActiveKey={data.map((server) => server.server)} accordion={false}>
                     {data.map((server) => (
-                        <Panel header={server.server} key={server.server}>
+                        <Panel
+                            header={server.server}
+                            key={server.server}
+                            extra={(
+                                <Space>
+                                    <Popconfirm
+                                        title="Deseja parar todos os processos deste servidor?"
+                                        onConfirm={(e) => {
+                                            e?.stopPropagation(); // Impede o acionamento do Collapse
+                                            handleStopAll(server.id);
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        okText="Sim"
+                                        cancelText="Não"
+                                    >
+                                        <Button type="primary" danger icon={<PoweroffOutlined />} onClick={(e) => e.stopPropagation()}>
+                                            Stop All
+                                        </Button>
+                                    </Popconfirm>
+                                    <Popconfirm
+                                        title="Deseja reiniciar todos os processos deste servidor?"
+                                        onConfirm={(e) => {
+                                            e?.stopPropagation(); // Impede o acionamento do Collapse
+                                            handleRestartAll(server.id);
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        okText="Sim"
+                                        cancelText="Não"
+                                    >
+                                        <Button type="primary" icon={<ReloadOutlined />} onClick={(e) => e.stopPropagation()}>
+                                            Restart All
+                                        </Button>
+                                    </Popconfirm>
+                                </Space>
+                            )}
+                        >
                             {renderTable(server.processes)}
                         </Panel>
                     ))}
