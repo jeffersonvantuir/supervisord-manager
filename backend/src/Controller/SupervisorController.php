@@ -92,6 +92,7 @@ class SupervisorController extends AbstractController
             }
 
             $responseJson[] = [
+                'id' => $server->getId(),
                 'server' => $server->getName(),
                 'processes' => $processesArray
             ];
@@ -194,6 +195,93 @@ class SupervisorController extends AbstractController
                     'overflow' => $overflow
                 ]
             );
+        } catch (\Throwable $throwable) {
+            return $this->json(
+                ['message' => $throwable->getMessage()],
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+    }
+
+    #[Route('/supervisor/stop-all/{serverId}', name: 'app_supervisor_stop_all', methods: Request::METHOD_POST)]
+    public function stopAll(
+        Request $request,
+        int $serverId,
+    ): Response {
+        try {
+            $server = $this->entityManager->getRepository(Server::class)->findOneBy(
+                ['id' => $serverId]
+            );
+
+            if (null === $server || false === $server->isSupervisorCompletedData() || false === $server->isEnabled()) {
+                throw new \DomainException('Servidor não encontrado');
+            }
+
+            $guzzleClient = new \GuzzleHttp\Client(
+                [
+                    'auth' => [
+                        $server->getSupervisorUsername(),
+                        $this->encryptionService->decrypt($server->getSupervisorPassword()),
+                    ]
+                ]
+            );
+
+            $client = new Client(
+                $server->getSupervisorEndpoint(),
+                new PsrTransport(
+                    new HttpFactory(),
+                    $guzzleClient
+                )
+            );
+
+            $supervisor = new Supervisor($client);
+            $supervisor->stopAllProcesses();
+
+            return $this->json([], Response::HTTP_NO_CONTENT);
+        } catch (\Throwable $throwable) {
+            return $this->json(
+                ['message' => $throwable->getMessage()],
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+    }
+
+    #[Route('/supervisor/restart-all/{serverId}', name: 'app_supervisor_restart_all', methods: Request::METHOD_POST)]
+    public function restartAll(
+        Request $request,
+        int $serverId,
+    ): Response {
+        try {
+            $server = $this->entityManager->getRepository(Server::class)->findOneBy(
+                ['id' => $serverId]
+            );
+
+            if (null === $server || false === $server->isSupervisorCompletedData() || false === $server->isEnabled()) {
+                throw new \DomainException('Servidor não encontrado');
+            }
+
+            $guzzleClient = new \GuzzleHttp\Client(
+                [
+                    'auth' => [
+                        $server->getSupervisorUsername(),
+                        $this->encryptionService->decrypt($server->getSupervisorPassword()),
+                    ]
+                ]
+            );
+
+            $client = new Client(
+                $server->getSupervisorEndpoint(),
+                new PsrTransport(
+                    new HttpFactory(),
+                    $guzzleClient
+                )
+            );
+
+            $supervisor = new Supervisor($client);
+            $supervisor->stopAllProcesses();
+            $supervisor->startAllProcesses();
+
+            return $this->json([], Response::HTTP_NO_CONTENT);
         } catch (\Throwable $throwable) {
             return $this->json(
                 ['message' => $throwable->getMessage()],

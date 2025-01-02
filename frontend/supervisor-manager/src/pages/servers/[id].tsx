@@ -10,16 +10,21 @@ interface Group {
     name: string;
 }
 
-const NewServerPage: React.FC = () => {
+const EditServerPage: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
-    const [groups, setGroups] = useState<Group[]>([]); // Estado para armazenar grupos
-    const [groupsLoading, setGroupsLoading] = useState<boolean>(true); // Loading para os grupos
+    const [groups, setGroups] = useState<Group[]>([]);
+    const [groupsLoading, setGroupsLoading] = useState<boolean>(true);
+    const [form] = Form.useForm(); // Usar o objeto do formulário para manipulação
 
     const router = useRouter();
+    const { id } = router.query; // Obtemos o ID do servidor a partir da URL
 
     useEffect(() => {
-        fetchServerGroups();
-    }, []);
+        if (id) {
+            fetchServerDetails();
+            fetchServerGroups();
+        }
+    }, [id]);
 
     const fetchServerGroups = async () => {
         setGroupsLoading(true);
@@ -34,26 +39,45 @@ const NewServerPage: React.FC = () => {
         }
     };
 
+    const fetchServerDetails = async () => {
+        try {
+            const response = await api.get(`/server/${id}`); // Endpoint para buscar detalhes do servidor
+            form.setFieldsValue({
+                group: response.data.group_id,
+                name: response.data.name,
+                description: response.data.description,
+                fqdn: response.data.fqdn,
+                sshUser: response.data.ssh.username,
+                supervisorUsername: response.data.supervisor.username,
+                supervisorEndpoint: response.data.supervisor.endpoint,
+                isActive: response.data.enabled
+            });
+        } catch (error) {
+            message.error('Erro ao carregar os dados do servidor.');
+            console.error(error);
+        }
+    };
+
     const handleSubmit = async (values: any) => {
         setLoading(true);
         try {
-            await api.post('/server/new', {
+            await api.put(`/server/${id}`, {
                 name: values.name,
                 description: values.description,
                 fqdn: values.fqdn,
-                group_id: values.group, // Passa o ID do grupo selecionado
+                group_id: values.group,
                 ssh_username: values.sshUser,
                 ssh_password: values.sshPassword,
                 supervisor_username: values.supervisorUsername,
                 supervisor_password: values.supervisorPassword,
                 supervisor_endpoint: values.supervisorEndpoint,
-                enabled: values.isActive,
+                enabled: values.isActive || false
             });
 
-            message.success('Servidor cadastrado com sucesso!');
+            message.success('Servidor atualizado com sucesso!');
             router.push('/servers'); // Redireciona para a listagem de servidores
         } catch (error) {
-            message.error('Erro ao cadastrar o servidor. Por favor, tente novamente.');
+            message.error('Erro ao atualizar o servidor. Por favor, tente novamente.');
             console.error(error);
         } finally {
             setLoading(false);
@@ -62,8 +86,8 @@ const NewServerPage: React.FC = () => {
 
     return (
         <Card style={{ maxWidth: '600px', margin: '20px auto' }}>
-            <h1>Cadastrar Novo Servidor</h1>
-            <Form layout="vertical" onFinish={handleSubmit}>
+            <h1>Editar Servidor</h1>
+            <Form layout="vertical" form={form} onFinish={handleSubmit}>
 
                 <Form.Item
                     label="Grupo de Servidor"
@@ -156,7 +180,7 @@ const NewServerPage: React.FC = () => {
 
                 <Form.Item>
                     <Button type="primary" htmlType="submit" loading={loading}>
-                        Cadastrar Servidor
+                        Atualizar Servidor
                     </Button>
                 </Form.Item>
             </Form>
@@ -164,4 +188,4 @@ const NewServerPage: React.FC = () => {
     );
 };
 
-export default NewServerPage;
+export default EditServerPage;
