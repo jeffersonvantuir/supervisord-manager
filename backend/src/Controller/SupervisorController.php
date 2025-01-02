@@ -79,6 +79,7 @@ class SupervisorController extends AbstractController
                     'name' => $process->getName(),
                     'description' => $payload['description'],
                     'state' => $process->getState(),
+                    'stateName' => ucwords(strtolower($payload['statename'])),
                     'isRunning' => $process->isRunning(),
                     'actions' => [
                         [

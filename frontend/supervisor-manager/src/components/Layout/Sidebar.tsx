@@ -38,9 +38,9 @@ const Sidebar: React.FC = () => {
         <Sider collapsible>
             <div style={{ height: 64, color: 'white', textAlign: 'center', lineHeight: '64px' }}>
                 <Image
-                    src="/Brasil_TecPar.png" // Coloque seu arquivo em public/logo.png
+                    src="/btpar-white.png"
                     alt="Logo"
-                    width={120}
+                    width={140}
                     height={40}
                 />
             </div>

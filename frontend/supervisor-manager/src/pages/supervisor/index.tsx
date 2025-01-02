@@ -7,6 +7,8 @@ import {
     EyeOutlined,
     PoweroffOutlined,
     ReloadOutlined,
+    ClusterOutlined,
+    CloudServerOutlined,
 } from '@ant-design/icons';
 import api from "@/services/api";
 
@@ -36,6 +38,7 @@ const SupervisorPage: React.FC = () => {
     const [initialLoading, setInitialLoading] = useState<boolean>(true);
     const [loading, setLoading] = useState<boolean>(true);
     const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({});
+    const [loadingAll, setLoadingAll] = useState<{ [key: string]: boolean }>({});
 
     useEffect(() => {
         fetchData();
@@ -60,25 +63,57 @@ const SupervisorPage: React.FC = () => {
         }
     };
 
+    const handleActionClick = async (url: string, processId: string, actionId: string, serverId: string) => {
+        if (actionId === 'log') {
+            window.open(`/supervisor/realtime-logs?process=${processId}&server_id=${serverId}`, '_blank');
+            return;
+        }
+
+        setLoadingActions((prev) => ({ ...prev, [`${processId}-${actionId}`]: true }));
+
+        try {
+            await api.post(url, {
+                server_id: serverId,
+                process: processId,
+                action: actionId,
+            });
+            message.success('Ação realizada com sucesso');
+            await fetchData(); // Recarrega os dados após a ação
+        } catch (error) {
+            message.error('Erro ao executar a ação');
+            console.error(error);
+        } finally {
+            setLoadingActions((prev) => ({ ...prev, [`${processId}-${actionId}`]: false }));
+        }
+    };
+
     const handleStopAll = async (serverId: string) => {
+        setLoadingAll((prev) => ({ ...prev, [`stop-all-${serverId}`]: true }));
+
         try {
             await api.post(`/supervisor/stop-all/${serverId}`);
             message.success('Todos os processos foram parados com sucesso!');
-            fetchData();
+            await fetchData(); // Recarrega os dados após a ação
         } catch (error) {
             message.error('Erro ao parar todos os processos');
             console.error(error);
+        } finally {
+            setLoadingAll((prev) => ({ ...prev, [`stop-all-${serverId}`]: false }));
         }
     };
 
     const handleRestartAll = async (serverId: string) => {
+        setLoadingAll((prev) => ({ ...prev, [`restart-all-${serverId}`]: true }));
+
         try {
             await api.post(`/supervisor/restart-all/${serverId}`);
             message.success('Todos os processos foram reiniciados com sucesso!');
-            fetchData();
+            await fetchData(); // Recarrega os dados após a ação
         } catch (error) {
             message.error('Erro ao reiniciar todos os processos');
             console.error(error);
+        } finally {
+            setLoadingAll((prev) => ({ ...prev, [`restart-all-${serverId}`]: false }));
         }
     };
 
@@ -88,6 +123,22 @@ const SupervisorPage: React.FC = () => {
             acc[server.group].push(server);
             return acc;
         }, {});
+    };
+
+    const getButtonStyles = (stateName: string) => {
+        switch (stateName) {
+            case 'Running':
+                return { color: 'green', borderColor: 'green' };
+            case 'Stopped':
+                return { color: 'yellow', borderColor: 'yellow' };
+            case 'Failed':
+            case 'Fatal':
+                return { color: 'red', borderColor: 'red' };
+            case 'Starting':
+                return { color: 'orange', borderColor: 'orange' };
+            default:
+                return { color: 'gray', borderColor: 'gray' }; // Default para estados desconhecidos
+        }
     };
 
     const renderTable = (processes: Process[]) => {
@@ -108,12 +159,9 @@ const SupervisorPage: React.FC = () => {
                 render: (_: any, record: Process) => (
                     <Button
                         type="default"
-                        style={{
-                            color: record.isRunning ? 'green' : 'yellow',
-                            borderColor: record.isRunning ? 'green' : 'yellow',
-                        }}
+                        style={getButtonStyles(record.stateName)}
                     >
-                        {record.isRunning ? 'Running' : 'Stopped'}
+                        {record.stateName}
                     </Button>
                 ),
             },
@@ -126,6 +174,12 @@ const SupervisorPage: React.FC = () => {
                             <Button
                                 type="default"
                                 key={action.id}
+                                loading={loadingActions[`${record.processId}-${action.id}`]}
+                                style={{
+                                    backgroundColor: action.id === 'start' ? 'green' : action.id === 'stop' ? 'red' : undefined,
+                                    color: action.id === 'start' || action.id === 'stop' ? 'white' : undefined,
+                                    borderColor: action.id === 'start' ? 'green' : action.id === 'stop' ? 'red' : undefined,
+                                }}
                                 onClick={() =>
                                     handleActionClick(action.url, record.processId, action.id, record.serverId)
                                 }
@@ -154,11 +208,21 @@ const SupervisorPage: React.FC = () => {
             ) : (
                 Object.entries(groupedServers).map(([group, servers]) => (
                     <Collapse key={group} style={{ marginBottom: '20px' }}>
-                        <Panel header={group} key={group}>
+                        <Panel header={
+                            <span>
+                                <ClusterOutlined style={{ marginRight: '8px' }}/>
+                                {group}
+                            </span>
+                        } key={group}>
                             <Collapse accordion>
                                 {servers.map((server) => (
                                     <Panel
-                                        header={server.server}
+                                        header={
+                                            <span>
+                                                <CloudServerOutlined style={{ marginRight: '8px' }}/>
+                                                {server.server}
+                                            </span>
+                                        }
                                         key={server.id}
                                         extra={(
                                             <Space>
@@ -168,7 +232,12 @@ const SupervisorPage: React.FC = () => {
                                                     okText="Sim"
                                                     cancelText="Não"
                                                 >
-                                                    <Button type="primary" danger icon={<PoweroffOutlined />}>
+                                                    <Button
+                                                        type="primary"
+                                                        danger
+                                                        icon={<PoweroffOutlined />}
+                                                        loading={loadingAll[`stop-all-${server.id}`]}
+                                                    >
                                                         Stop All
                                                     </Button>
                                                 </Popconfirm>
@@ -178,7 +247,11 @@ const SupervisorPage: React.FC = () => {
                                                     okText="Sim"
                                                     cancelText="Não"
                                                 >
-                                                    <Button type="primary" icon={<ReloadOutlined />}>
+                                                    <Button
+                                                        type="primary"
+                                                        icon={<ReloadOutlined />}
+                                                        loading={loadingAll[`restart-all-${server.id}`]}
+                                                    >
                                                         Restart All
                                                     </Button>
                                                 </Popconfirm>
