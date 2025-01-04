@@ -4,6 +4,7 @@ import {
     DashboardOutlined,
     CloudServerOutlined,
     EyeOutlined,
+    UserOutlined,
 } from '@ant-design/icons';
 import { useRouter } from 'next/router';
 
@@ -27,6 +28,11 @@ const Sidebar: React.FC = () => {
             key: '/supervisor',
             icon: <EyeOutlined />,
             label: 'Supervisor',
+        },
+        {
+            key: '/users',
+            icon: <UserOutlined />,
+            label: 'Usuários',
         },
     ];
 
