@@ -127,12 +127,12 @@ const SupervisorPage: React.FC = () => {
             case 'Running':
                 return { color: 'green', borderColor: 'green' };
             case 'Stopped':
-                return { color: 'yellow', borderColor: 'yellow' };
+                return { color: '#ffc53d', borderColor: '#ffc53d' };
             case 'Failed':
             case 'Fatal':
                 return { color: 'red', borderColor: 'red' };
             case 'Starting':
-                return { color: 'orange', borderColor: 'orange' };
+                return { color: '#91caff', borderColor: '#91caff' };
             default:
                 return { color: 'gray', borderColor: 'gray' }; // Default para estados desconhecidos
         }
