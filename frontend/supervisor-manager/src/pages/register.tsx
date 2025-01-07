@@ -1,9 +1,9 @@
-import { Form, Input, Button, Card, Checkbox, message } from 'antd';
+import { Form, Input, Button, Card, message } from 'antd';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import api from "@/services/api";
 
-const NewUserPage: React.FC = () => {
+const RegisterPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 
@@ -25,6 +25,10 @@ const NewUserPage: React.FC = () => {
             setLoading(false);
         }
     };
+
+    const handleLoginRedirect = () => {
+        router.push('/login');
+    }
 
     return (
         <div style={styles.container}>
@@ -67,6 +71,17 @@ const NewUserPage: React.FC = () => {
                             Cadastrar
                         </Button>
                     </Form.Item>
+
+                    <Form.Item>
+                        <Button
+                            type="link"
+                            onClick={handleLoginRedirect}
+                            style={styles.loginButton}
+                            block
+                        >
+                            Já possui uma conta? Faça Login!
+                        </Button>
+                    </Form.Item>
                 </Form>
             </Card>
         </div>
@@ -98,6 +113,11 @@ const styles = {
     form: {
         width: '100%',
     },
+    loginButton: {
+        textAlign: 'center' as const,
+        color: 'rgb(0, 21, 41)',
+        fontWeight: 'bold',
+    },
 };
 
-export default NewUserPage;
+export default RegisterPage;

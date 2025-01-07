@@ -3,14 +3,6 @@ import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import api from "@/services/api";
 
-const { Option } = Select;
-
-interface User {
-    id: number;
-    name: string;
-    email: string;
-}
-
 const EditUserPage: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [form] = Form.useForm(); // Usar o objeto do formulário para manipulação

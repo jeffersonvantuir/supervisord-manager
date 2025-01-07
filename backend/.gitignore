@@ -17,3 +17,7 @@ yarn-error.log
 ###< symfony/webpack-encore-bundle ###
 
 docker-compose.override.yaml
+
+###> lexik/jwt-authentication-bundle ###
+/config/jwt/*.pem
+###< lexik/jwt-authentication-bundle ###

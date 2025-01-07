@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Collapse, Table, Spin, message, Button, Space, Popconfirm } from 'antd';
 import {
-    PlayCircleOutlined,
-    StopOutlined,
-    FileTextOutlined,
     EyeOutlined,
     PoweroffOutlined,
     ReloadOutlined,

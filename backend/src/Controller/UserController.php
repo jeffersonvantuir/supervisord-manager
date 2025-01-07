@@ -42,8 +42,6 @@ class UserController extends AbstractController
         return $this->json($usersArray);
     }
 
-
-
     #[Route('/users/{id}', name: 'app_users_edit', methods: [Request::METHOD_GET, Request::METHOD_PUT])]
     public function edit(
         Request $request,
