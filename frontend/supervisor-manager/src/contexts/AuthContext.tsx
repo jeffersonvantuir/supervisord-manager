@@ -5,6 +5,7 @@ import { setItemToStorage } from "@/helpers/sessionStorage/setItemToStorage";
 import { removeItemFromStorage } from "@/helpers/sessionStorage/removeItemFromStorage";
 import api from "@/services/api";
 import { getItemFromStorage } from "@/helpers/sessionStorage/getItemFromStorage";
+import { message } from "antd";
 
 interface IUser {
     id: number;
@@ -42,16 +43,24 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         const token = getItemFromStorage(SessionStorageKeys.JwtToken);
 
         if (token) {
-            const responseProfile = await api.get('/profile', {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            try {
+                const responseProfile = await api.get('/profile', {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
 
-            setItemToStorage(SessionStorageKeys.UserData, JSON.stringify(responseProfile.data))
+                setItemToStorage(SessionStorageKeys.UserData, JSON.stringify(responseProfile.data))
 
-            setIsAuthenticated(true);
-            setUser(JSON.stringify(responseProfile.data));
+                setIsAuthenticated(true);
+                setUser(JSON.stringify(responseProfile.data));
+            } catch (error) {
+                if (error.status == 401) {
+                    logout();
+                }
+                message.error('Erro ao realizar a ação no servidor.');
+                console.error(error);
+            }
         } else {
             setIsAuthenticated(false);
             router.push('/login');
