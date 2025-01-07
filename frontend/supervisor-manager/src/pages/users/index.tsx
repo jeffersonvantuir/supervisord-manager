@@ -64,8 +64,8 @@ const UsersPage: React.FC = () => {
         },
         {
             title: 'Último Login',
-            dataIndex: 'lastLogin',
-            key: 'lastLogin',
+            dataIndex: 'last_login',
+            key: 'last_login',
             render: (lastLogin: string) => lastLogin ? new Date(lastLogin).toLocaleString() : '-', // Formata a data
         },
         {

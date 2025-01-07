@@ -1,22 +1,34 @@
 import { Form, Input, Button, Card } from 'antd';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { setItemToStorage } from '@/helpers/sessionStorage/setItemToStorage';
+import { SessionStorageKeys } from '@/interface/SessionStorageKeys';
+
+import api from '@/services/api';
 
 const LoginPage: React.FC = () => {
+    const { login } = useAuth();
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 
     const handleLogin = async (values: { email: string; password: string }) => {
         setLoading(true);
         try {
-            setTimeout(() => {
-                setLoading(false);
-                router.push('/dashboard'); // Redireciona após login
-            }, 1000);
+            const response = await api.post('/token', values);
+            const token = response.data.token;
+
+            setItemToStorage(SessionStorageKeys.JwtToken, token)
+
+            setLoading(false);
+            router.push('/dashboard');
         } catch (error) {
             setLoading(false);
-            console.error('Erro ao fazer login:', error);
         }
+    };
+
+    const handleRegisterRedirect = () => {
+        router.push('/register');
     };
 
     return (
@@ -52,6 +64,17 @@ const LoginPage: React.FC = () => {
                         <Form.Item>
                             <Button type="primary" htmlType="submit" loading={loading} block>
                                 Entrar
+                            </Button>
+                        </Form.Item>
+
+                        <Form.Item>
+                            <Button
+                                type="link"
+                                onClick={handleRegisterRedirect}
+                                style={styles.registerButton}
+                                block
+                            >
+                                Cadastre-se
                             </Button>
                         </Form.Item>
                     </Form>
@@ -99,6 +122,11 @@ const styles = {
     },
     form: {
         width: '100%',
+    },
+    registerButton: {
+        textAlign: 'center' as const,
+        color: 'rgb(0, 21, 41)',
+        fontWeight: 'bold',
     },
 };
 

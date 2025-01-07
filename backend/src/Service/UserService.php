@@ -83,4 +83,18 @@ class UserService
         $user->setEnabled(!$user->isEnabled());
         $this->entityManager->flush();
     }
+
+    public function updateLastLogin(int $userId): void
+    {
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(
+            ['id' => $userId]
+        );
+
+        if (null === $user) {
+            throw new \DomainException('Usuário não encontrado.');
+        }
+
+        $user->renewLastLogin();
+        $this->entityManager->flush();
+    }
 }

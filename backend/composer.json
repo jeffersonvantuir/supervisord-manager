@@ -11,6 +11,7 @@
         "doctrine/doctrine-migrations-bundle": "^3.3",
         "doctrine/orm": "^3.3",
         "guzzlehttp/guzzle": "^7.9",
+        "lexik/jwt-authentication-bundle": "^3.1",
         "lstrojny/fxmlrpc": "^0.22.0",
         "nelmio/cors-bundle": "^2.5",
         "phpxmlrpc/phpxmlrpc": "4.11.*",
