@@ -25,6 +25,9 @@ class ServerGroup
     #[ORM\Column(type: Types::TEXT)]
     private ?string $description = null;
 
+    #[ORM\Column(type: 'boolean')]
+    private ?bool $enabled = true;
+
     /**
      * @var Collection<int, Server>
      */
@@ -61,6 +64,18 @@ class ServerGroup
     public function setDescription(string $description): static
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    public function isEnabled(): ?bool
+    {
+        return $this->enabled;
+    }
+
+    public function setEnabled(bool $enabled): static
+    {
+        $this->enabled = $enabled;
 
         return $this;
     }

@@ -29,7 +29,7 @@ const EditServerPage: React.FC = () => {
     const fetchServerGroups = async () => {
         setGroupsLoading(true);
         try {
-            const response = await api.get('/server-group');
+            const response = await api.get('/server-groups');
             setGroups(response.data);
         } catch (error) {
             message.error('Erro ao carregar os grupos de servidores.');

@@ -2,6 +2,7 @@ import { Layout, Menu, Popconfirm, message } from 'antd';
 import Image from 'next/image';
 import {
     DashboardOutlined,
+    ClusterOutlined,
     CloudServerOutlined,
     EyeOutlined,
     UserOutlined,
@@ -27,6 +28,11 @@ const Sidebar: React.FC = () => {
             key: '/dashboard',
             icon: <DashboardOutlined />,
             label: 'Dashboard',
+        },
+        {
+            key: '/server-groups',
+            icon: <ClusterOutlined />,
+            label: 'Grupo de Servidores',
         },
         {
             key: '/servers',

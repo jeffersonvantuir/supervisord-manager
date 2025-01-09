@@ -10,6 +10,7 @@ use App\Service\SupervisorService;
 use Doctrine\Common\Collections\Order;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -124,7 +125,7 @@ class SupervisorController extends AbstractController
                 throw new \InvalidArgumentException('ID do Servidor e nome do processo devem ser informados.');
             }
 
-            $server = $this->supervisorService->getServer($requestData['server_id']);
+            $server = $this->supervisorService->getServer((int) $requestData['server_id']);
             $supervisor = $this->supervisorService->getSupervisor($server);
 
             [$log, $offset, $overflow] = $supervisor->tailProcessStdoutLog($processName, $offset, 4096);
@@ -168,6 +169,21 @@ class SupervisorController extends AbstractController
             $this->supervisorService->restartAllProcesses($serverId);
 
             return $this->json([], Response::HTTP_NO_CONTENT);
+        } catch (\Throwable $throwable) {
+            return $this->json(
+                ['message' => $throwable->getMessage()],
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+    }
+
+    #[Route('/supervisor/summary', name: 'app_supervisor_summary', methods: Request::METHOD_GET)]
+    public function summary(): JsonResponse
+    {
+        try {
+            $summary = $this->supervisorService->getSummaryStatus();
+
+            return $this->json($summary);
         } catch (\Throwable $throwable) {
             return $this->json(
                 ['message' => $throwable->getMessage()],

@@ -23,8 +23,8 @@ class ServerController extends AbstractController
 
     }
 
-    #[Route('')]
-    public function index(EncryptionService $encryptionService): Response
+    #[Route('', methods: Request::METHOD_GET)]
+    public function index(): Response
     {
         $servers = $this->entityManager->getRepository(Server::class)->findBy([]);
 
@@ -171,8 +171,6 @@ class ServerController extends AbstractController
             if (null === $server) {
                 throw new \DomainException('Servidor não encontrado.');
             }
-
-            $requestData = $request->toArray();
 
             $server->setEnabled(!$server->isEnabled());
             $this->entityManager->flush();
