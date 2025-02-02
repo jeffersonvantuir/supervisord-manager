@@ -15,7 +15,7 @@ const LoginPage: React.FC = () => {
     const handleLogin = async (values: { email: string; password: string }) => {
         setLoading(true);
         try {
-            const response = await api.post('/token', values);
+            const response = await api.post('/api/login', values);
             const token = response.data.token;
 
             setItemToStorage(SessionStorageKeys.JwtToken, token)
@@ -47,7 +47,7 @@ const LoginPage: React.FC = () => {
                     >
                         <Form.Item
                             label="Usuário"
-                            name="email"
+                            name="username"
                             rules={[{ required: true, message: 'Por favor, insira seu usuário!' }]}
                         >
                             <Input placeholder="Digite seu usuário" />
