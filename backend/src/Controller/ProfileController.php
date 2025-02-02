@@ -17,9 +17,7 @@ class ProfileController extends AbstractController
         $user = $this->getUser();
 
         $profileData = [
-            'id' => $user->getId(),
-            'name' => $user->getName(),
-            'email' => $user->getEmail(),
+            'username' => $user->getUserIdentifier(),
             'roles' => $user->getRoles()
         ];
 

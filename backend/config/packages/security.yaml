@@ -3,38 +3,32 @@ security:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
 
     providers:
-        app_user_provider:
-            entity:
-                class: App\Entity\User
-                property: email
+        ldap_users:
+            ldap:
+                service: Symfony\Component\Ldap\Ldap
+                base_dn: '%env(LDAP_BASE_DN)%'
+                search_dn: '%env(LDAP_SEARCH_DN)%'
+                search_password: '%env(LDAP_SEARCH_PASSWORD)%'
+                default_roles: ROLE_USER
+                uid_key: '%env(LDAP_UID_KEY)%'
+
     firewalls:
-        dev:
-            pattern: ^/(_(profiler|wdt)|css|images|js)/
-            security: false
-        token:
-            pattern: /token
+        login:
+            pattern: ^/login
             stateless: true
-            user_checker: App\Security\UserChecker
+            provider: ldap_users
             json_login:
-                check_path: token
-                username_path: email
+                check_path: /login
+                username_path: username
                 password_path: password
-                success_handler: lexik_jwt_authentication.handler.authentication_success
-                failure_handler: lexik_jwt_authentication.handler.authentication_failure
-        main:
+            custom_authenticators:
+                - App\Security\LdapAuthenticator
+
+        api:
             pattern: ^/
             stateless: true
             jwt: ~
 
     access_control:
-        - { path: ^/api/login, roles: PUBLIC_ACCESS }
-        - { path: ^/,      roles: IS_AUTHENTICATED_FULLY }
-
-when@test:
-    security:
-        password_hashers:
-            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
-                algorithm: auto
-                cost: 4 # Lowest possible value for bcrypt
-                time_cost: 3 # Lowest possible value for argon
-                memory_cost: 10 # Lowest possible value for argon
+        - { path: ^/login, roles: PUBLIC_ACCESS }
+        - { path: ^/, roles: ROLE_USER }

@@ -21,5 +21,31 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+    Symfony\Component\Ldap\Ldap:
+        arguments:
+            $adapter: '@Symfony\Component\Ldap\Adapter\ExtLdap\Adapter'
+
+    App\Security\LdapAuthenticator:
+        arguments:
+            $ldap: '@Symfony\Component\Ldap\Ldap'
+            $ldapBaseDn: '%env(LDAP_BASE_DN)%'
+            $ldapUidKey: '%env(LDAP_UID_KEY)%'
+            $ldapDomain: '%env(LDAP_DOMAIN)%'
+            $groupDn: '%env(LDAP_GROUP_DN)%'
+
+    Symfony\Component\Ldap\Security\LdapUserProvider:
+        arguments:
+            $ldap: '@Symfony\Component\Ldap\Ldap'
+            $baseDn: '%env(LDAP_BASE_DN)%'
+            $searchDn: '%env(LDAP_SEARCH_DN)%'
+            $searchPassword: '%env(LDAP_SEARCH_PASSWORD)%'
+            $uidKey: '%env(LDAP_UID_KEY)%'
+
+    Symfony\Component\Ldap\Adapter\ExtLdap\Adapter:
+        arguments:
+            - host: '%env(LDAP_HOST)%'
+              port: '%env(int:LDAP_PORT)%'
+              encryption: none
+              options:
+                  protocol_version: 3
+                  referrals: false
